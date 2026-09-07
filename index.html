@@ -42,7 +42,7 @@
             <div class="text-box">
                 <h2>Your files</h2>
                 <p>Add these to your folder:</p>
-                <p><code>server.js</code> &mdash; the relay<br><code>package.json</code> &mdash; its setup<br><code>public/index.html</code> &mdash; phone page</p>
+                <p><code>server.js</code> &mdash; the relay<br><code>package.json</code> &mdash; its setup<br><code>index.html</code> &mdash; the web page</p>
                 <p>Without these, Render has nothing to run.</p>
             </div>
 
@@ -57,6 +57,20 @@
                 <p>First let Render see the repo: <b>Credentials &rarr; Configure in GitHub</b>, tick your repo, <b>Save</b>.</p>
                 <p>Then <b>New &rarr; Web Service</b>, pick it. Set Language to <b>Node</b>, Build <code>npm install</code>, Start <code>node server.js</code>.</p>
             </div>
+        </div>
+
+        <!-- Folder layout: which file goes where -->
+        <div class="code-box">
+            <h2>Folder layout</h2>
+            <p class="code-note">One flat folder &mdash; no subfolders.</p>
+            <pre><code>your-repo/
+├── package.json
+├── server.js        &larr; Render runs this
+├── index.html       &larr; the web page, served at "/"
+└── styles.css</code></pre>
+            <p class="code-note">Two lines point Render at <code>server.js</code>:<br>
+            Render <b>Start Command</b>: <code>node server.js</code><br>
+            <code>package.json</code>: <code>"start": "node server.js"</code></p>
         </div>
 
         <!-- The two files students copy into their folder -->
@@ -80,7 +94,7 @@
 
         <div class="code-box">
             <details>
-            <summary><code>server.js</code> &mdash; serves the phone page &amp; relays messages by room</summary>
+            <summary><code>server.js</code> &mdash; serves the page &amp; relays messages by room</summary>
             <pre><code>'use strict';
 
 const http = require('http');
@@ -89,7 +103,7 @@ const path = require('path');
 const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const ROOT = __dirname;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -97,7 +111,7 @@ const MIME = {
   '.css': 'text/css; charset=utf-8'
 };
 
-// ---- serve the phone page ----
+// ---- serve the page ----
 const server = http.createServer((req, res) =&gt; {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
@@ -107,8 +121,8 @@ const server = http.createServer((req, res) =&gt; {
   }
 
   const rel = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
-  const file = path.join(PUBLIC_DIR, path.normalize(rel));
-  if (!file.startsWith(PUBLIC_DIR)) { res.writeHead(403).end('no'); return; }
+  const file = path.join(ROOT, path.normalize(rel));
+  if (!file.startsWith(ROOT)) { res.writeHead(403).end('no'); return; }
 
   fs.readFile(file, (err, data) =&gt; {
     if (err) { res.writeHead(404).end('not found'); return; }
@@ -162,7 +176,7 @@ server.listen(PORT, () =&gt; console.log(`relay listening on :${PORT}`));</code>
         <!-- Box 5 -->
         <div class="text-box">
             <h2>(b) Open it on your phone</h2>
-            <p>Visit that address, tap <b>Start</b>, allow motion access. HTTPS is what lets the phone share its sensors.</p>
+            <p>On your phone go to your <code>…onrender.com</code> address. HTTPS is what will later let the phone share its sensors.</p>
         </div>
 
         <!-- Box 6 -->

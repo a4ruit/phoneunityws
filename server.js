@@ -6,7 +6,7 @@ const path = require('path');
 const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const ROOT = __dirname;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -28,9 +28,9 @@ const server = http.createServer((req, res) => {
   }
 
   const rel = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
-  const file = path.join(PUBLIC_DIR, path.normalize(rel));
+  const file = path.join(ROOT, path.normalize(rel));
 
-  if (!file.startsWith(PUBLIC_DIR)) {
+  if (!file.startsWith(ROOT)) {
     res.writeHead(403).end('forbidden');
     return;
   }
