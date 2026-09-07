@@ -161,10 +161,8 @@ server.listen(process.env.PORT || 3000);</code></pre>
         <!-- Checkpoint: find the WebSocket address Unity needs -->
         <div class="text-box">
             <h2>(d) Checkpoint: open your site</h2>
-            <p>Open your <code>https://your-name.onrender.com</code> address in a browser. You should see your <b>Phone + Unity</b> page. That confirms the server is working.</p>
-            <p>Now make the <b>WebSocket</b> version for Unity: change <code>https</code> to <code>wss</code> and add <code>/ws</code>:</p>
-            <p><code>wss://your-name.onrender.com/ws</code></p>
-            <p class="code-note">Copy this address, using your own <code>onrender.com</code> name. The Unity step plugs it in.</p>
+            <p>Open your <code>https://your-name.onrender.com</code> address in a browser, on your computer or your phone. You should see your <b>Phone + Unity</b> page. That confirms the server is working.</p>
+            <p class="code-note">Keep this address handy. Unity needs it soon.</p>
         </div>
 
         <!-- Spawn button: sends a message the Unity side listens for -->
@@ -172,8 +170,7 @@ server.listen(process.env.PORT || 3000);</code></pre>
             <h2>(e) Prepare a spawn button on our web page</h2>
             <p>Add a button to your <code>index.html</code> that sends a <code>spawn</code> message to your server. This one is live, press it to see what it does:</p>
             <button id="spawnBtn">Spawn a box</button>
-            <p class="status-line"><span class="dot" id="statusDot"></span><span id="statusText">connecting</span></p>
-            <p class="code-note">Green means it reached the server. Add the code below to your own page.</p>
+            <p class="code-note">Add the code below to your own page.</p>
         </div>
 
         <!-- The snippet students paste into their own page -->
@@ -181,13 +178,9 @@ server.listen(process.env.PORT || 3000);</code></pre>
             <details>
             <summary>Add this to <code>index.html</code>, before <code>&lt;/body&gt;</code></summary>
             <pre><code>&lt;button id="spawnBtn"&gt;Spawn a box&lt;/button&gt;
-&lt;p id="status"&gt;connecting&lt;/p&gt;
 
 &lt;script&gt;
   var ws = new WebSocket('wss://' + location.host + '/ws');
-  var status = document.getElementById('status');
-
-  ws.onopen = function () { status.textContent = 'connected'; };
 
   document.getElementById('spawnBtn').onclick = function () {
     ws.send(JSON.stringify({ type: 'spawn' }));
@@ -220,8 +213,7 @@ server.listen(process.env.PORT || 3000);</code></pre>
             <p>1. Make a folder <code>Assets/Scripts</code> and add <code>BoxSpawner.cs</code> (code below).<br>
             2. <b>GameObject &rarr; Create Empty</b>.<br>
             3. Drag <code>BoxSpawner.cs</code> onto it.<br>
-            4. In the Inspector, paste your <code>wss://…onrender.com/ws</code> into <b>Server Url</b>.<br>
-            5. Press <b>Play</b>, then press the web button.</p>
+            4. Make your WebSocket address: change your site's <code>https</code> to <code>wss</code> and add <code>/ws</code> (<code>wss://your-name.onrender.com/ws</code>). Paste it into <b>Server Url</b>.</p>
             <p class="code-note">No plugins needed. <code>ClientWebSocket</code> is built into Unity.</p>
         </div>
 
@@ -293,44 +285,26 @@ public class BoxSpawner : MonoBehaviour
 
         <!-- Checkpoint -->
         <div class="text-box">
-            <h2>You'll know it works when&hellip;</h2>
-            <p>You press the web button and a cube drops into the Unity scene. That's the whole pipe: browser to server to Unity. Everything else is tinkering.</p>
+            <h2>(h) Press Play and test</h2>
+            <p>Press <b>Play</b> in Unity. Then open your <code>onrender.com</code> page and click the <b>Spawn a box</b> button you made. A cube drops into the scene.</p>
+            <p class="code-note">That's the whole pipe: browser to server to Unity. Everything else is tinkering.</p>
         </div>
 
     </div>
 
     <script>
     // Opens a WebSocket to this page's own server. Each button press sends a
-    // "spawn" message, which the server relays to Unity in the same room.
+    // "spawn" message, which the server relays to Unity.
     (function () {
         var btn = document.getElementById('spawnBtn');
         if (!btn) return;
-        var dot = document.getElementById('statusDot');
-        var state = document.getElementById('statusText');
-
-        function set(text, ok) {
-            state.textContent = text;
-            dot.className = ok ? 'dot on' : 'dot';
-        }
 
         var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        var ws;
-        try {
-            ws = new WebSocket(proto + '//' + location.host + '/ws');
-        } catch (e) {
-            set('no server', false);
-            return;
-        }
-
-        ws.onopen = function () { set('connected', true); };
-        ws.onclose = function () { set('disconnected', false); };
-        ws.onerror = function () { set('no server', false); };
+        var ws = new WebSocket(proto + '//' + location.host + '/ws');
 
         btn.addEventListener('click', function () {
-            if (ws && ws.readyState === WebSocket.OPEN) {
+            if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'spawn' }));
-            } else {
-                set('not connected', false);
             }
         });
     })();
