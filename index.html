@@ -31,11 +31,19 @@
             <p>Goal: your phone talking to Unity through <b>your own free server</b>.</p>
         </div>
 
-        <!-- Box 4 - step (a) with its two detail cards beside it -->
+        <!-- Box 4 - step (a) intro -->
+        <div class="text-box">
+            <h2>(a) Put the site online</h2>
+            <p>Add the server files to your folder, push to <b>GitHub</b>, then deploy free on <b>Render</b> for an <code>https://…onrender.com</code> address.</p>
+        </div>
+
+        <!-- Box 5 - the three detail cards for step (a) -->
         <div class="step-row">
             <div class="text-box">
-                <h2>(a) Put the site online</h2>
-                <p>Get the VSCode folder onto <b>GitHub</b>, then deploy it free on <b>Render</b> to get an <code>https://…onrender.com</code> address.</p>
+                <h2>Your files</h2>
+                <p>Add these to your folder:</p>
+                <p><code>server.js</code> &mdash; the relay<br><code>package.json</code> &mdash; its setup<br><code>public/index.html</code> &mdash; phone page</p>
+                <p>Without these, Render has nothing to run.</p>
             </div>
 
             <div class="text-box">
@@ -49,6 +57,106 @@
                 <p>First let Render see the repo: <b>Credentials &rarr; Configure in GitHub</b>, tick your repo, <b>Save</b>.</p>
                 <p>Then <b>New &rarr; Web Service</b>, pick it. Set Language to <b>Node</b>, Build <code>npm install</code>, Start <code>node server.js</code>.</p>
             </div>
+        </div>
+
+        <!-- The two files students copy into their folder -->
+        <div class="code-box">
+            <details>
+            <summary><code>package.json</code> &mdash; the dependency + start command</summary>
+            <pre><code>{
+  "name": "phone-unity-relay",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}</code></pre>
+            </details>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary><code>server.js</code> &mdash; serves the phone page &amp; relays messages by room</summary>
+            <pre><code>'use strict';
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { WebSocketServer } = require('ws');
+
+const PORT = process.env.PORT || 3000;
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8'
+};
+
+// ---- serve the phone page ----
+const server = http.createServer((req, res) =&gt; {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+
+  if (url.pathname === '/healthz') {
+    res.writeHead(200).end('ok');
+    return;
+  }
+
+  const rel = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
+  const file = path.join(PUBLIC_DIR, path.normalize(rel));
+  if (!file.startsWith(PUBLIC_DIR)) { res.writeHead(403).end('no'); return; }
+
+  fs.readFile(file, (err, data) =&gt; {
+    if (err) { res.writeHead(404).end('not found'); return; }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'text/plain' });
+    res.end(data);
+  });
+});
+
+// ---- websocket relay ----
+const wss = new WebSocketServer({ server, path: '/ws' });
+const rooms = new Map();
+
+function getRoom(name) {
+  if (!rooms.has(name)) rooms.set(name, new Set());
+  return rooms.get(name);
+}
+
+function broadcast(room, sender, payload) {
+  const text = JSON.stringify(payload);
+  for (const client of room) {
+    if (client !== sender &amp;&amp; client.readyState === client.OPEN) {
+      client.send(text);
+    }
+  }
+}
+
+wss.on('connection', (ws, req) =&gt; {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const name = (url.searchParams.get('room') || 'default').slice(0, 64);
+  const room = getRoom(name);
+  room.add(ws);
+
+  ws.on('message', (raw) =&gt; {
+    let msg;
+    try { msg = JSON.parse(raw.toString()); } catch { return; }
+    if (!msg || typeof msg !== 'object') return;
+    // Pass anything through to everyone else in the same room.
+    broadcast(room, ws, msg);
+  });
+
+  ws.on('close', () =&gt; {
+    room.delete(ws);
+    if (room.size === 0) rooms.delete(name);
+  });
+});
+
+server.listen(PORT, () =&gt; console.log(`relay listening on :${PORT}`));</code></pre>
+            </details>
         </div>
 
         <!-- Box 5 -->
