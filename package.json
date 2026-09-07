@@ -1,0 +1,16 @@
+{
+  "name": "iol-heading-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebSocket relay that forwards phone orientation data to the Unity scene.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
