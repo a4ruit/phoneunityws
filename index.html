@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone + Unity Integration Workshop</title>
+     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@1,2&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+
+<body>
+    <!-- This wrapper container keeps all the boxes stacked together -->
+    <div class="container">
+        
+        <!-- Box 1 -->
+        <div class="text-box">
+            <h2>Required stuff:</h2>
+            <p>An empty 3D Unity project <br>A VSCode folder <br> Existing GitHub Account <br>  </p>
+        </div>
+
+        <!-- Box 2 -->
+        <div class="text-box">
+            <h2>What we will learn:</h2>
+            <p>The <b>workflow process</b> on how we can use WebSockets to drive interactions in Unity so that you can walk away with a foundation to tinker around with. </p>
+        </div>
+
+        <!-- Box 3 -->
+        <div class="text-box">
+            <h2>Part 1 &mdash; Setup</h2>
+            <p>Goal: your phone talking to Unity through <b>your own free server</b>.</p>
+        </div>
+
+        <!-- Box 4 - step (a) with its two detail cards beside it -->
+        <div class="step-row">
+            <div class="text-box">
+                <h2>(a) Put the site online</h2>
+                <p>Get the VSCode folder onto <b>GitHub</b>, then deploy it free on <b>Render</b> to get an <code>https://…onrender.com</code> address.</p>
+            </div>
+
+            <div class="text-box">
+                <h2>GitHub</h2>
+                <p>At <code>github.com/new</code> make a repo, then <b>Add file &rarr; Upload files</b> and drag your folder in. Commit. No commands needed.</p>
+            </div>
+
+            <div class="text-box">
+                <h2>Render</h2>
+                <p>At <code>render.com</code>: <b>New &rarr; Web Service</b>, pick that repo. Build <code>npm install</code>, Start <code>node server.js</code>. Wait for <b>Live</b>.</p>
+            </div>
+        </div>
+
+        <!-- Box 5 -->
+        <div class="text-box">
+            <h2>(b) Open it on your phone</h2>
+            <p>Visit that address, tap <b>Start</b>, allow motion access. HTTPS is what lets the phone share its sensors.</p>
+        </div>
+
+        <!-- Box 6 -->
+        <div class="text-box">
+            <h2>(c) Point Unity at it</h2>
+            <p>In the <b>HeadingReceiver</b> component, set the server to <code>wss://…onrender.com/ws</code>, then press <b>Play</b>.</p>
+        </div>
+
+        <!-- Box 7 -->
+        <div class="text-box">
+            <h2>You'll know it works when&hellip;</h2>
+            <p>You turn your phone and the view turns with you in Unity. That's the whole pipe &mdash; everything else is tinkering.</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

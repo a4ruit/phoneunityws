@@ -1,0 +1,65 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+/* The body centers the group, but grows and scrolls when the cards are
+   taller than the screen so the top cards are never cut off. */
+body {
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f2f5;
+     font-family: 'Satoshi', sans-serif;
+}
+
+/* The container forces the boxes to stack vertically */
+.container {
+    display: flex;
+    flex-direction: column; /* Stacks the child elements vertically */
+    align-items: center;    /* Centers the narrow single boxes */
+    gap: 20px;              /* Adds spacing between the boxes */
+    width: 100%;
+    max-width: 900px;       /* Wide enough for the (a) row of three */
+    padding: 20px;          /* Prevents boxes from touching screen edges on mobile */
+    box-sizing: border-box;
+}
+
+/* The row that sits step (a) next to its GitHub and Render detail cards.
+   Wraps to a stack when there isn't room. */
+.step-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+    align-items: stretch;
+}
+
+.step-row .text-box {
+    flex: 1 1 240px;   /* Share the width evenly, drop under (a) when narrow */
+    max-width: none;
+    margin: 0;
+}
+
+/* The individual box styles remain the same */
+.text-box {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;   /* Keeps the single boxes at their original width */
+    box-sizing: border-box;
+}
+
+/* Inline addresses / component names */
+code {
+    background-color: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    word-break: break-all;
+}
