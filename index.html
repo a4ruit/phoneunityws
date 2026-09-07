@@ -16,7 +16,7 @@
         <!-- Box 1 -->
         <div class="text-box">
             <h2>Required stuff:</h2>
-            <p>An empty 3D Unity project <br>A VSCode folder <br> Existing GitHub Account <br>  </p>
+            <p>Unity installed (Unity Hub) <br>VSCode installed <br> Existing GitHub Account <br>  </p>
         </div>
 
         <!-- Box 2 -->
@@ -27,171 +27,314 @@
 
         <!-- Box 3 -->
         <div class="text-box">
-            <h2>Part 1 &mdash; Setup</h2>
+            <h2>Part 1: Setup</h2>
             <p>Goal: your phone talking to Unity through <b>your own free server</b>.</p>
         </div>
 
-        <!-- Box 4 - step (a) intro -->
+        <!-- Step (a): create the starter page in VSCode -->
         <div class="text-box">
-            <h2>(a) Put the site online</h2>
-            <p>Add the server files to your folder, push to <b>GitHub</b>, then deploy free on <b>Render</b> for an <code>https://…onrender.com</code> address.</p>
+            <h2>(a) Set up your folder in VSCode</h2>
+            <p>Make a new folder and open it in VSCode (<b>File &rarr; Open Folder</b>). Create two files to start:</p>
+            <p>1. <code>index.html</code> (the page)<br>2. <code>styles.css</code> (how it looks)</p>
+            <p class="code-note">Good practice: get a plain page working before adding any server code.</p>
         </div>
 
-        <!-- Box 5 - the three detail cards for step (a) -->
-        <div class="step-row">
-            <div class="text-box">
-                <h2>Your files</h2>
-                <p>Add these to your folder:</p>
-                <p><code>server.js</code> &mdash; the relay<br><code>package.json</code> &mdash; its setup<br><code>index.html</code> &mdash; the web page</p>
-                <p>Without these, Render has nothing to run.</p>
-            </div>
-
-            <div class="text-box">
-                <h2>GitHub</h2>
-                <p>Make a repo at <code>github.com/new</code>. Then push your folder to it:</p>
-                <p><code>git add .</code><br><code>git commit -m "site"</code><br><code>git push</code></p>
-            </div>
-
-            <div class="text-box">
-                <h2>Render</h2>
-                <p>First let Render see the repo: <b>Credentials &rarr; Configure in GitHub</b>, tick your repo, <b>Save</b>.</p>
-                <p>Then <b>New &rarr; Web Service</b>, pick it. Set Language to <b>Node</b>, Build <code>npm install</code>, Start <code>node server.js</code>.</p>
-            </div>
-        </div>
-
-        <!-- Folder layout: which file goes where -->
-        <div class="code-box">
-            <h2>Folder layout</h2>
-            <p class="code-note">One flat folder &mdash; no subfolders.</p>
-            <pre><code>your-repo/
-├── package.json
-├── server.js        &larr; Render runs this
-├── index.html       &larr; the web page, served at "/"
-└── styles.css</code></pre>
-            <p class="code-note">Two lines point Render at <code>server.js</code>:<br>
-            Render <b>Start Command</b>: <code>node server.js</code><br>
-            <code>package.json</code>: <code>"start": "node server.js"</code></p>
-        </div>
-
-        <!-- The two files students copy into their folder -->
         <div class="code-box">
             <details>
-            <summary><code>package.json</code> &mdash; the dependency + start command</summary>
+            <summary><code>index.html</code>: a starting page</summary>
+            <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;Phone + Unity&lt;/title&gt;
+  &lt;link rel="stylesheet" href="styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Phone + Unity&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+            </details>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary><code>styles.css</code>: basic styling</summary>
+            <pre><code>body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 40px;
+}</code></pre>
+            </details>
+        </div>
+
+        <!-- Step (b): add the server files -->
+        <div class="text-box">
+            <h2>(b) Add the server files</h2>
+            <p>Next to your page, create two more files:</p>
+            <p><code>server.js</code>: the relay<br><code>package.json</code>: its setup</p>
+            <p class="code-note">These are what Render will run.</p>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary><code>package.json</code>: the dependency + start command</summary>
             <pre><code>{
-  "name": "phone-unity-relay",
-  "version": "1.0.0",
-  "private": true,
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "ws": "^8.18.0"
-  }
+  "dependencies": { "ws": "^8.18.0" },
+  "scripts": { "start": "node server.js" }
 }</code></pre>
             </details>
         </div>
 
         <div class="code-box">
             <details>
-            <summary><code>server.js</code> &mdash; serves the page &amp; relays messages by room</summary>
-            <pre><code>'use strict';
-
-const http = require('http');
+            <summary><code>server.js</code>: serves the page &amp; relays messages</summary>
+            <pre><code>const http = require('http');
 const fs = require('fs');
-const path = require('path');
 const { WebSocketServer } = require('ws');
 
-const PORT = process.env.PORT || 3000;
-const ROOT = __dirname;
-
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8'
-};
-
-// ---- serve the page ----
+// Serve the web page.
 const server = http.createServer((req, res) =&gt; {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-
-  if (url.pathname === '/healthz') {
-    res.writeHead(200).end('ok');
-    return;
-  }
-
-  const rel = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
-  const file = path.join(ROOT, path.normalize(rel));
-  if (!file.startsWith(ROOT)) { res.writeHead(403).end('no'); return; }
-
-  fs.readFile(file, (err, data) =&gt; {
+  const file = req.url === '/' ? '/index.html' : req.url;
+  fs.readFile(__dirname + file, (err, data) =&gt; {
     if (err) { res.writeHead(404).end('not found'); return; }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'text/plain' });
+    if (file.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
     res.end(data);
   });
 });
 
-// ---- websocket relay ----
+// Relay every message to all the other connected clients.
 const wss = new WebSocketServer({ server, path: '/ws' });
-const rooms = new Map();
 
-function getRoom(name) {
-  if (!rooms.has(name)) rooms.set(name, new Set());
-  return rooms.get(name);
-}
-
-function broadcast(room, sender, payload) {
-  const text = JSON.stringify(payload);
-  for (const client of room) {
-    if (client !== sender &amp;&amp; client.readyState === client.OPEN) {
-      client.send(text);
+wss.on('connection', (ws) =&gt; {
+  ws.on('message', (msg) =&gt; {
+    for (const client of wss.clients) {
+      if (client !== ws &amp;&amp; client.readyState === client.OPEN) {
+        client.send(msg.toString());
+      }
     }
-  }
-}
-
-wss.on('connection', (ws, req) =&gt; {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const name = (url.searchParams.get('room') || 'default').slice(0, 64);
-  const room = getRoom(name);
-  room.add(ws);
-
-  ws.on('message', (raw) =&gt; {
-    let msg;
-    try { msg = JSON.parse(raw.toString()); } catch { return; }
-    if (!msg || typeof msg !== 'object') return;
-    // Pass anything through to everyone else in the same room.
-    broadcast(room, ws, msg);
-  });
-
-  ws.on('close', () =&gt; {
-    room.delete(ws);
-    if (room.size === 0) rooms.delete(name);
   });
 });
 
-server.listen(PORT, () =&gt; console.log(`relay listening on :${PORT}`));</code></pre>
+server.listen(process.env.PORT || 3000);</code></pre>
             </details>
         </div>
 
-        <!-- Box 5 -->
-        <div class="text-box">
-            <h2>(b) Open it on your phone</h2>
-            <p>On your phone go to your <code>…onrender.com</code> address. HTTPS is what will later let the phone share its sensors.</p>
+        <!-- Folder layout: everything is in place now -->
+        <div class="code-box">
+            <h2>Your folder now</h2>
+            <p class="code-note">Four files, one flat folder, no subfolders.</p>
+            <pre><code>your-folder/
+├── index.html       &larr; the web page
+├── styles.css
+├── server.js        &larr; Render runs this
+└── package.json</code></pre>
         </div>
 
-        <!-- Box 6 -->
+        <!-- Step (c): deploy -->
         <div class="text-box">
-            <h2>(c) Point Unity at it</h2>
-            <p>In the <b>HeadingReceiver</b> component, set the server to <code>wss://…onrender.com/ws</code>, then press <b>Play</b>.</p>
+            <h2>(c) Put the site online</h2>
+            <p>Push your folder to <b>GitHub</b>, then deploy it free on <b>Render</b> for an <code>https://…onrender.com</code> address.</p>
         </div>
 
-        <!-- Box 7 -->
+        <div class="step-row">
+            <div class="text-box">
+                <h2><a href="https://github.com/new" target="_blank" rel="noopener">GitHub</a></h2>
+                <p>Make an empty repo at <code>github.com/new</code>. Then in VSCode's terminal, run these <b>one line at a time</b>:</p>
+                <p style="text-align:left">
+                <code>git init</code><br>
+                <code>git add .</code><br>
+                <code>git commit -m "first commit"</code><br>
+                <code>git branch -M main</code><br>
+                <code>git remote add origin &lt;your repo url&gt;</code><br>
+                <code>git push -u origin main</code></p>
+                <p class="code-note">One at a time: each line depends on the one before it. Pasting all at once jumbles the order.</p>
+            </div>
+
+            <div class="text-box">
+                <h2><a href="https://dashboard.render.com" target="_blank" rel="noopener">Render</a></h2>
+                <p>First let Render see the repo: <b>Credentials &rarr; Configure in GitHub</b>, tick your repo, <b>Save</b>.</p>
+                <p>Then <b>New &rarr; Web Service</b>, pick it. Set Language to <b>Node</b>, Build <code>npm install</code>, Start <code>node server.js</code>.</p>
+            </div>
+        </div>
+
+        <!-- Checkpoint: find the WebSocket address Unity needs -->
+        <div class="text-box">
+            <h2>(d) Checkpoint: open your site</h2>
+            <p>Open your <code>https://your-name.onrender.com</code> address in a browser. You should see your <b>Phone + Unity</b> page. That confirms the server is working.</p>
+            <p>Now make the <b>WebSocket</b> version for Unity: change <code>https</code> to <code>wss</code> and add <code>/ws</code>:</p>
+            <p><code>wss://your-name.onrender.com/ws</code></p>
+            <p class="code-note">Copy this address, using your own <code>onrender.com</code> name. The Unity step plugs it in.</p>
+        </div>
+
+        <!-- Spawn button: sends a message the Unity side listens for -->
+        <div class="text-box">
+            <h2>(e) Prepare a spawn button on our web page</h2>
+            <p>Add a button to your <code>index.html</code> that sends a <code>spawn</code> message to your server. This one is live, press it to see what it does:</p>
+            <button id="spawnBtn">Spawn a box</button>
+            <p class="status-line"><span class="dot" id="statusDot"></span><span id="statusText">connecting</span></p>
+            <p class="code-note">Green means it reached the server. Add the code below to your own page.</p>
+        </div>
+
+        <!-- The snippet students paste into their own page -->
+        <div class="code-box">
+            <details>
+            <summary>Add this to <code>index.html</code>, before <code>&lt;/body&gt;</code></summary>
+            <pre><code>&lt;button id="spawnBtn"&gt;Spawn a box&lt;/button&gt;
+&lt;p id="status"&gt;connecting&lt;/p&gt;
+
+&lt;script&gt;
+  var ws = new WebSocket('wss://' + location.host + '/ws');
+  var status = document.getElementById('status');
+
+  ws.onopen = function () { status.textContent = 'connected'; };
+
+  document.getElementById('spawnBtn').onclick = function () {
+    ws.send(JSON.stringify({ type: 'spawn' }));
+  };
+&lt;/script&gt;</code></pre>
+            </details>
+        </div>
+
+        <!-- Push the edited page so Render redeploys it -->
+        <div class="text-box">
+            <h2>Update your site</h2>
+            <p>You changed <code>index.html</code>, so push the update. Render redeploys on its own:</p>
+            <p style="text-align:left">
+            <code>git add .</code><br>
+            <code>git commit -m "this is an update note"</code><br>
+            <code>git push</code></p>
+            <p class="code-note">This is the everyday flow after that first setup: add, commit, push.</p>
+        </div>
+
+        <!-- Create the Unity project -->
+        <div class="text-box">
+            <h2>(f) Make a new Unity project</h2>
+            <p>Open <b>Unity Hub</b>, click <b>New Project</b>, pick the <b>3D</b> template, name it, and <b>Create</b>. Wait for it to open.</p>
+        </div>
+
+        <!-- Unity side: receive the message and spawn a cube -->
+        <div class="text-box">
+            <h2>(g) Add the spawner to Unity</h2>
+            <p>In your new project:</p>
+            <p>1. Make a folder <code>Assets/Scripts</code> and add <code>BoxSpawner.cs</code> (code below).<br>
+            2. <b>GameObject &rarr; Create Empty</b>.<br>
+            3. Drag <code>BoxSpawner.cs</code> onto it.<br>
+            4. In the Inspector, paste your <code>wss://…onrender.com/ws</code> into <b>Server Url</b>.<br>
+            5. Press <b>Play</b>, then press the web button.</p>
+            <p class="code-note">No plugins needed. <code>ClientWebSocket</code> is built into Unity.</p>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary><code>BoxSpawner.cs</code>: connects and drops a cube on "spawn"</summary>
+            <pre><code>using System;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
+
+public class BoxSpawner : MonoBehaviour
+{
+    [Tooltip("wss://your-service.onrender.com/ws")]
+    public string serverUrl = "wss://your-service.onrender.com/ws";
+
+    ClientWebSocket socket;
+    int pending;                        // boxes waiting to spawn
+    readonly object gate = new object();
+
+    async void Start()
+    {
+        socket = new ClientWebSocket();
+        await socket.ConnectAsync(new Uri(serverUrl), CancellationToken.None);
+        Debug.Log("Connected");
+        _ = ReceiveLoop();
+    }
+
+    async Task ReceiveLoop()
+    {
+        var buffer = new byte[1024];
+        try
+        {
+            while (socket.State == WebSocketState.Open)
+            {
+                var result = await socket.ReceiveAsync(new ArraySegment&lt;byte&gt;(buffer), CancellationToken.None);
+                string text = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                if (text.Contains("spawn")) lock (gate) { pending++; }
+            }
+        }
+        catch { }
+    }
+
+    void Update()
+    {
+        // Boxes must be created on Unity's main thread, so we do it here.
+        lock (gate)
+        {
+            while (pending &gt; 0) { pending--; SpawnBox(); }
+        }
+    }
+
+    void SpawnBox()
+    {
+        var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        box.transform.position = new Vector3(UnityEngine.Random.Range(-4f, 4f), 6f, UnityEngine.Random.Range(-4f, 4f));
+        box.AddComponent&lt;Rigidbody&gt;();
+    }
+
+    void OnDestroy()
+    {
+        socket?.Dispose();
+    }
+}</code></pre>
+            </details>
+        </div>
+
+        <!-- Checkpoint -->
         <div class="text-box">
             <h2>You'll know it works when&hellip;</h2>
-            <p>You turn your phone and the view turns with you in Unity. That's the whole pipe &mdash; everything else is tinkering.</p>
+            <p>You press the web button and a cube drops into the Unity scene. That's the whole pipe: browser to server to Unity. Everything else is tinkering.</p>
         </div>
 
     </div>
+
+    <script>
+    // Opens a WebSocket to this page's own server. Each button press sends a
+    // "spawn" message, which the server relays to Unity in the same room.
+    (function () {
+        var btn = document.getElementById('spawnBtn');
+        if (!btn) return;
+        var dot = document.getElementById('statusDot');
+        var state = document.getElementById('statusText');
+
+        function set(text, ok) {
+            state.textContent = text;
+            dot.className = ok ? 'dot on' : 'dot';
+        }
+
+        var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        var ws;
+        try {
+            ws = new WebSocket(proto + '//' + location.host + '/ws');
+        } catch (e) {
+            set('no server', false);
+            return;
+        }
+
+        ws.onopen = function () { set('connected', true); };
+        ws.onclose = function () { set('disconnected', false); };
+        ws.onerror = function () { set('no server', false); };
+
+        btn.addEventListener('click', function () {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'spawn' }));
+            } else {
+                set('not connected', false);
+            }
+        });
+    })();
+    </script>
 
 </body>
 </html>

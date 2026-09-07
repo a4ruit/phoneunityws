@@ -114,6 +114,53 @@ body {
     color: inherit;
 }
 
+/* Card titles that link out (GitHub, Render) */
+.text-box h2 a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+}
+
+.text-box h2 a:hover {
+    color: #4a7dff;
+}
+
+/* Connection-test button + status */
+#spawnBtn {
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background-color: #1e1e2e;
+    color: #fff;
+}
+
+#spawnBtn:active {
+    transform: translateY(1px);
+}
+
+.status-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #d64545;   /* red until a reply comes back */
+}
+
+.dot.on {
+    background-color: #3a9d5d;    /* green when connected */
+}
+
 /* Inline addresses / component names */
 code {
     background-color: #f0f2f5;
