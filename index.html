@@ -15,8 +15,9 @@
         
         <!-- Box 1 -->
         <div class="text-box">
-            <h2>Required stuff:</h2>
-            <p>Unity installed (Unity Hub) <br>VSCode installed <br> Existing GitHub Account <br>  </p>
+            <h2>Before you arrive</h2>
+            <p>Have these ready so we start building, not signing up:</p>
+            <p>Unity installed (Unity Hub) <br>VSCode installed <br>GitHub account <br>Render account (free, sign in with GitHub)</p>
         </div>
 
         <!-- Box 2 -->
@@ -170,22 +171,26 @@ server.listen(process.env.PORT || 3000);</code></pre>
             <h2>(e) Prepare a spawn button on our web page</h2>
             <p>Add a button to your <code>index.html</code> that sends a <code>spawn</code> message to your server. This one is live, press it to see what it does:</p>
             <button id="spawnBtn">Spawn a box</button>
-            <p class="code-note">Add the code below to your own page.</p>
+            <p class="code-note">Good practice: the button lives in the page, the JavaScript lives in its own file.</p>
         </div>
 
-        <!-- The snippet students paste into their own page -->
+        <!-- The button + a link to the script file -->
         <div class="code-box">
             <details>
-            <summary>Add this to <code>index.html</code>, before <code>&lt;/body&gt;</code></summary>
+            <summary>In <code>index.html</code>, before <code>&lt;/body&gt;</code></summary>
             <pre><code>&lt;button id="spawnBtn"&gt;Spawn a box&lt;/button&gt;
+&lt;script src="spawn.js"&gt;&lt;/script&gt;</code></pre>
+            </details>
+        </div>
 
-&lt;script&gt;
-  var ws = new WebSocket('wss://' + location.host + '/ws');
+        <div class="code-box">
+            <details>
+            <summary>New file <code>spawn.js</code></summary>
+            <pre><code>var ws = new WebSocket('wss://' + location.host + '/ws');
 
-  document.getElementById('spawnBtn').onclick = function () {
-    ws.send(JSON.stringify({ type: 'spawn' }));
-  };
-&lt;/script&gt;</code></pre>
+document.getElementById('spawnBtn').onclick = function () {
+  ws.send(JSON.stringify({ type: 'spawn' }));
+};</code></pre>
             </details>
         </div>
 
@@ -292,8 +297,278 @@ public class BoxSpawner : MonoBehaviour
 
         <!-- Part 2 divider -->
         <div class="text-box">
-            <h2>Part 2: Tinkering</h2>
-            <p>You have the pipe working. Now use the phone's own features to drive what happens in Unity.</p>
+            <h2>Part 2: Tinkering (if you finish early)</h2>
+            <p>The foundation is done. Everything past here is bonus: for if you finish early, or to explore on your own afterwards. Use the phone's own features to drive what happens in Unity.</p>
+        </div>
+
+        <!-- The pattern behind all tinkering -->
+        <div class="text-box">
+            <h2>The pattern</h2>
+            <p>Nothing new to deploy. You only change <b>what the phone sends</b> and <b>what Unity does</b> with it. The server relays any message untouched.</p>
+        </div>
+
+        <!-- Step (a): read tilt, show an arrow -->
+        <div class="text-box">
+            <h2>(a) Read the phone's tilt</h2>
+            <p>Now we tinker with the phone's <b>tilt</b>. We turn how far it is tipped into two numbers, draw an arrow so we can see it, and send that to Unity.</p>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary>In <code>index.html</code>, before <code>&lt;/body&gt;</code></summary>
+            <pre><code>&lt;button id="tiltBtn"&gt;Enable tilt&lt;/button&gt;
+&lt;canvas id="tiltArrow" width="160" height="160"&gt;&lt;/canvas&gt;
+&lt;script src="tilt.js"&gt;&lt;/script&gt;</code></pre>
+            </details>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary>New file <code>tilt.js</code></summary>
+            <pre><code>var ws = new WebSocket('wss://' + location.host + '/ws');
+var ctx = document.getElementById('tiltArrow').getContext('2d');
+
+document.getElementById('tiltBtn').onclick = function () {
+  // iOS needs permission, asked from inside a tap.
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission();
+  }
+  window.addEventListener('deviceorientation', onTilt);
+};
+
+function onTilt(e) {
+  var x = Math.max(-1, Math.min(1, e.gamma / 45));   // left / right
+  var y = Math.max(-1, Math.min(1, e.beta  / 45));   // front / back
+  drawArrow(x, y);
+  ws.send(JSON.stringify({ type: 'tilt', x: x, y: y }));
+}
+
+function drawArrow(x, y) {
+  ctx.clearRect(0, 0, 160, 160);
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(80, 80);
+  ctx.lineTo(80 + x * 60, 80 + y * 60);
+  ctx.stroke();
+}</code></pre>
+            </details>
+        </div>
+
+        <!-- Push the edited page -->
+        <div class="text-box">
+            <h2>Update your site</h2>
+            <p>You changed <code>index.html</code>, so push it:</p>
+            <p style="text-align:left">
+            <code>git add .</code><br>
+            <code>git commit -m "add tilt"</code><br>
+            <code>git push</code></p>
+        </div>
+
+        <!-- Step (b): Unity rolls a cube from the tilt -->
+        <div class="text-box">
+            <h2>(b) Roll a cube in Unity</h2>
+            <p>In your project:</p>
+            <p>1. Add a <b>Plane</b> (floor) and a <b>Cube</b> with a <b>Rigidbody</b>.<br>
+            2. Put <code>TiltRoller.cs</code> (below) on the cube.<br>
+            3. Paste your <code>wss://…onrender.com/ws</code> into <b>Server Url</b>.<br>
+            4. Point the camera straight down at the plane.</p>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary><code>TiltRoller.cs</code>: pushes the cube in the tilt direction</summary>
+            <pre><code>using System;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]
+public class TiltRoller : MonoBehaviour
+{
+    [Tooltip("wss://your-service.onrender.com/ws")]
+    public string serverUrl = "wss://your-service.onrender.com/ws";
+    public float strength = 20f;
+
+    Rigidbody body;
+    float tiltX, tiltZ;
+    ClientWebSocket socket;
+
+    async void Start()
+    {
+        body = GetComponent&lt;Rigidbody&gt;();
+        socket = new ClientWebSocket();
+        await socket.ConnectAsync(new Uri(serverUrl), CancellationToken.None);
+        Debug.Log("Connected");
+        _ = ReceiveLoop();
+    }
+
+    async Task ReceiveLoop()
+    {
+        var buffer = new byte[1024];
+        try
+        {
+            while (socket.State == WebSocketState.Open)
+            {
+                var r = await socket.ReceiveAsync(new ArraySegment&lt;byte&gt;(buffer), CancellationToken.None);
+                var msg = JsonUtility.FromJson&lt;Tilt&gt;(Encoding.UTF8.GetString(buffer, 0, r.Count));
+                if (msg != null &amp;&amp; msg.type == "tilt") { tiltX = msg.x; tiltZ = msg.y; }
+            }
+        }
+        catch { }
+    }
+
+    void FixedUpdate()
+    {
+        // The one line to tinker with: tilt becomes a push on the cube.
+        body.AddForce(new Vector3(tiltX, 0f, tiltZ) * strength);
+    }
+
+    void OnDestroy() { socket?.Dispose(); }
+
+    [Serializable] class Tilt { public string type; public float x; public float y; }
+}</code></pre>
+            </details>
+        </div>
+
+        <!-- Step (c): test -->
+        <div class="text-box">
+            <h2>(c) Press Play and tilt</h2>
+            <p>Press <b>Play</b>, then tilt your phone like a tray. The cube rolls the way you tip it. A phone sensor is now driving Unity in real time.</p>
+        </div>
+
+        <!-- Experiment prompts -->
+        <div class="text-box">
+            <h2>Now try</h2>
+            <p>Change one thing and watch what happens:</p>
+            <p style="text-align:left">
+            &bull; Raise <code>strength</code> for faster rolls.<br>
+            &bull; Drop a stack of cubes for it to smash into.<br>
+            &bull; Swap <code>AddForce</code> for <code>AddTorque</code> so tilt spins it.<br>
+            &bull; Send a different sensor: a shake, mic volume, a finger drag.</p>
+            <p class="code-note">Same pipe every time. Only the message and the reaction change.</p>
+        </div>
+
+        <!-- ===== Extra activity: bowling ===== -->
+        <div class="text-box">
+            <h2>Extra: Build a bowling alley</h2>
+            <p>For the curious. Put it together: <b>tilt</b> to aim, and a <b>Bowl</b> button to roll a ball down a lane into a set of pins.</p>
+        </div>
+
+        <div class="text-box">
+            <h2>(1) Build the lane</h2>
+            <p>In Unity:</p>
+            <p>1. A long thin <b>Plane</b> for the lane.<br>
+            2. A <b>Sphere</b> with a <b>Rigidbody</b> at the near end. This is the ball.<br>
+            3. Stand about <b>ten thin cubes</b> in a triangle at the far end. These are the pins.<br>
+            4. Put the camera behind the ball, looking down the lane.</p>
+        </div>
+
+        <div class="text-box">
+            <h2>(2) Add a bowl button</h2>
+            <p>Keep your <code>tilt.js</code> from Part 2 for aiming. Add one more button to throw:</p>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary>In <code>index.html</code>, before <code>&lt;/body&gt;</code></summary>
+            <pre><code>&lt;button id="bowlBtn"&gt;Bowl&lt;/button&gt;
+&lt;script src="bowl.js"&gt;&lt;/script&gt;</code></pre>
+            </details>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary>New file <code>bowl.js</code></summary>
+            <pre><code>var ws = new WebSocket('wss://' + location.host + '/ws');
+
+document.getElementById('bowlBtn').onclick = function () {
+  ws.send(JSON.stringify({ type: 'bowl' }));
+};</code></pre>
+            </details>
+        </div>
+
+        <div class="text-box">
+            <h2>(3) Roll the ball in Unity</h2>
+            <p>Put <code>BowlingBall.cs</code> (below) on the ball and set its <b>Server Url</b>. Tilt to aim, press <b>Bowl</b> to throw, press <b>R</b> to reset.</p>
+        </div>
+
+        <div class="code-box">
+            <details>
+            <summary><code>BowlingBall.cs</code>: aim with tilt, launch on bowl</summary>
+            <pre><code>using System;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]
+public class BowlingBall : MonoBehaviour
+{
+    public string serverUrl = "wss://your-service.onrender.com/ws";
+    public float power = 15f;      // speed down the lane
+    public float aimRange = 4f;    // how far tilt steers left / right
+
+    Rigidbody body;
+    Vector3 start;
+    float aim;                     // -1..1 from the phone tilt
+    bool bowl;
+    ClientWebSocket socket;
+
+    async void Start()
+    {
+        body = GetComponent&lt;Rigidbody&gt;();
+        start = transform.position;
+        socket = new ClientWebSocket();
+        await socket.ConnectAsync(new Uri(serverUrl), CancellationToken.None);
+        _ = ReceiveLoop();
+    }
+
+    async Task ReceiveLoop()
+    {
+        var buffer = new byte[1024];
+        try
+        {
+            while (socket.State == WebSocketState.Open)
+            {
+                var r = await socket.ReceiveAsync(new ArraySegment&lt;byte&gt;(buffer), CancellationToken.None);
+                string text = Encoding.UTF8.GetString(buffer, 0, r.Count);
+                if (text.Contains("bowl")) bowl = true;
+                else if (text.Contains("tilt")) aim = JsonUtility.FromJson&lt;Tilt&gt;(text).x;
+            }
+        }
+        catch { }
+    }
+
+    void Update()
+    {
+        if (bowl)
+        {
+            bowl = false;
+            // Roll down the lane (+Z), steered sideways by the aim.
+            body.velocity = new Vector3(aim * aimRange, 0f, power);
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))   // reset the ball
+        {
+            body.velocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            transform.position = start;
+        }
+    }
+
+    [Serializable] class Tilt { public string type; public float x; }
+    void OnDestroy() { socket?.Dispose(); }
+}</code></pre>
+            </details>
+        </div>
+
+        <div class="text-box">
+            <h2>Make it yours</h2>
+            <p>Add gutters, count the pins that fall, or bowl with a phone <b>flick</b> instead of a button.</p>
         </div>
 
     </div>
